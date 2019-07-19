@@ -42,6 +42,7 @@ class SINDy(SINDyBase):
         if np.allclose(dt, dt[0]):
             args = (0, dt[0], 1)
         else:
+            raise NotImplementedError("Does finite diff support this?")
             args = (0, t_grid, 1)
 
         # compute time derivative
