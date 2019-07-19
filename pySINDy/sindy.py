@@ -57,6 +57,10 @@ class SINDy(SINDyBase):
         self._coef, _ = self.sparsify_dynamics(lib, x_dot, cut_off)
 
         # identify non trivial terms and remember them
+        used_idxs = [not all(row == 0) for row in self._coef]
+        self._red_desp = self._desp[used_idxs]
+        self._red_coef = self._coef[used_idxs]
+
         self._deg = poly_degree
 
         return self
@@ -77,11 +81,15 @@ class SINDy(SINDyBase):
     def rhs(self, x, u=None):
         data = self._join_args(x, u)
         theta_mat, self._desp = self.polynomial_expansion(data,
-                                                          degree=self._deg)
-        x_dot = theta_mat.dot(self._coef).squeeze()
+                                                          degree=self._deg,
+                                                          red_desp=self._red_desp)
+        x_dot = theta_mat.dot(self._red_coef).squeeze()
         return x_dot
 
     def predict(self, x0, t_arr, u_arr=None):
+        if self._coef is None:
+            raise ValueError("Call fit first!")
+
         if u_arr is not None:
             u_callback = interp1d(t_arr,
                                   u_arr,

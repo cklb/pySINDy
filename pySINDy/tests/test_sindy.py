@@ -31,8 +31,8 @@ class TestSINDyC(TestCase):
             return y_dt
 
         t0 = 0
-        te = 10
-        t_grid = np.linspace(t0, te, 100)
+        te = 100
+        t_grid = np.linspace(t0, te, 1000)
         y0 = np.array([1, 0])
         res = solve_ivp(rhs, (t0, te), y0, t_eval=t_grid)
 
@@ -44,8 +44,8 @@ class TestSINDyC(TestCase):
         # fit
         model = SINDy()
         model.fit(self.x_data, self.t_data,
-                  poly_degree=1, u_data=self.u_data)
-        model.plot_coefficients
+                  poly_degree=5, u_data=self.u_data)
+        model.plot_coefficients()
         plt.show()
 
         # predict

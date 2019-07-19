@@ -29,7 +29,6 @@ class SINDyBase(object):
         """
         return self._desp
 
-    @property
     def plot_coefficients(self):
         """
         :return: plot of the coefficients
@@ -236,7 +235,9 @@ class SINDyBase(object):
         return all_exponents
 
     @staticmethod
-    def polynomial_expansion(data, degree=1, remove_zero_order=False, var_names=None):
+    def polynomial_expansion(data, degree=1,
+                             remove_zero_order=False, var_names=None,
+                             red_desp=None):
         """
         :param data: a 2D numpy array of original features stored in each column
         :param degree: degree of polynomials of features to be expanded
@@ -252,12 +253,24 @@ class SINDyBase(object):
         # extended features
         nfeat = data.shape[1]
         exponents = SINDyBase.get_ordered_poly_exponents(nfeat, degree, remove_zero_order)
-        result = np.array([np.prod([data[:, k] ** e[k] for k in np.arange(nfeat)],
-                                   axis=0) for e in exponents]).T
 
         # descriptions of each extended feature
-        desp = SINDyBase.exponent_to_description(exponents, 'sup', remove_zero_order,
+        desp = SINDyBase.exponent_to_description(exponents,
+                                                 'sup',
+                                                 remove_zero_order,
                                                  var_names=var_names)
+
+        # if reduced descriptions are provided, compute only those
+        if red_desp is not None:
+            sel_arr = [d in red_desp for d in desp]
+            selected_exponents = exponents[sel_arr]
+        else:
+            selected_exponents = exponents
+
+        # extended feature matrix
+        result = np.array([np.prod(
+            [data[:, k] ** e[k] for k in np.arange(nfeat)],
+            axis=0) for e in selected_exponents]).T
 
         return result, desp
 
@@ -448,7 +461,7 @@ class SINDyBase(object):
         if as_dict:
             return desp_dict
 
-        return desp
+        return np.array(desp)
 
     @staticmethod
     def plot(coe, desp):
