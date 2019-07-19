@@ -245,12 +245,12 @@ class SINDyBase(object):
         :return: a tensor consists of extended features, and corresponding descriptions
         """
         if len(data.shape) == 1:
-            data = data[:, np.newaxis]
+            data = data[np.newaxis, :]
         if len(data.shape) > 2:
             raise ValueError("The input array is not 2D!")
 
         # extended features
-        nfeat = data.shape[-1]
+        nfeat = data.shape[1]
         exponents = SINDyBase.get_ordered_poly_exponents(nfeat, degree, remove_zero_order)
         result = np.array([np.prod([data[:, k] ** e[k] for k in np.arange(nfeat)],
                                    axis=0) for e in exponents]).T

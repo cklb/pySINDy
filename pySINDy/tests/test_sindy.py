@@ -5,6 +5,7 @@ from unittest import TestCase
 
 import numpy as np
 from scipy.integrate import solve_ivp
+from matplotlib import pyplot as plt
 
 from ..sindy import SINDy
 
@@ -33,17 +34,27 @@ class TestSINDyC(TestCase):
         te = 10
         t_grid = np.linspace(t0, te, 100)
         y0 = np.array([1, 0])
-        res = solve_ivp(rhs, (t0, te), y0, t_grid=t_grid)
+        res = solve_ivp(rhs, (t0, te), y0, t_eval=t_grid)
 
         self.t_data = t_grid
-        self.y_data = res.y.T
+        self.x_data = res.y.T
         self.u_data = self.u_func(t_grid)
 
-    def test_fit(self):
+    def test_run(self):
+        # fit
         model = SINDy()
-        model.fit(self.y_data, self.t_data,
-                  poly_degree=1, input_data=self.u_data)
-        print(model._coef)
+        model.fit(self.x_data, self.t_data,
+                  poly_degree=1, u_data=self.u_data)
+        model.plot_coefficients
+        plt.show()
+
+        # predict
+        res = model.predict(self.x_data[0], self.t_data, self.u_data)
+        for meas, pred in zip(self.x_data.T, res.T):
+            l = plt.plot(self.t_data, pred, label="pred")
+            plt.plot(self.t_data, meas, "--")
+
+        plt.show()
 
     def test_shape1(self):
         warnings.simplefilter("ignore")
