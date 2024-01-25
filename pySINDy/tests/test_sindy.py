@@ -38,13 +38,23 @@ class TestSINDyC(TestCase):
 
         self.t_data = t_grid
         self.x_data = res.y.T
-        self.u_data = self.u_func(t_grid)
+        self.u_data = self.u_func(t_grid)[:, None]
 
     def test_run(self):
         # fit
         model = SINDy()
+
+        exponents = np.array([
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ])
+
         model.fit(self.x_data, self.t_data,
-                  poly_degree=5, u_data=self.u_data)
+                  poly_degree=5,
+                  exponents=exponents,
+                  u_data=self.u_data)
         model.plot_coefficients()
         plt.show()
 

@@ -235,7 +235,7 @@ class SINDyBase(object):
         return all_exponents
 
     @staticmethod
-    def polynomial_expansion(data, degree=1,
+    def polynomial_expansion(data, degree=1, exponents=None,
                              remove_zero_order=False, var_names=None,
                              red_desp=None):
         """
@@ -249,30 +249,42 @@ class SINDyBase(object):
             data = data[np.newaxis, :]
         if len(data.shape) > 2:
             raise ValueError("The input array is not 2D!")
-
-        # extended features
         nfeat = data.shape[1]
-        exponents = SINDyBase.get_ordered_poly_exponents(nfeat, degree, remove_zero_order)
+
+        if exponents is None:
+            exponents = SINDyBase.create_exponents(nfeat,
+                                                   degree,
+                                                   remove_zero_order)
 
         # descriptions of each extended feature
         desp = SINDyBase.exponent_to_description(exponents,
                                                  'sup',
                                                  remove_zero_order,
                                                  var_names=var_names)
+        lib = SINDyBase.build_feature_matrix(data, exponents)
 
-        # if reduced descriptions are provided, compute only those
-        if red_desp is not None:
-            sel_arr = [d in red_desp for d in desp]
-            selected_exponents = exponents[sel_arr]
-        else:
-            selected_exponents = exponents
+        return exponents, desp, lib
 
-        # extended feature matrix
+    @staticmethod
+    def build_feature_matrix(data, exponents):
+        """
+        build extended feature matrix
+        """
+        if len(data.shape) == 1:
+            data = data[np.newaxis, :]
+        nfeat = data.shape[1]
         result = np.array([np.prod(
             [data[:, k] ** e[k] for k in np.arange(nfeat)],
-            axis=0) for e in selected_exponents]).T
+            axis=0) for e in exponents]).T
+        return result
 
-        return result, desp
+    @staticmethod
+    def create_exponents(nfeat, degree, remove_zero_order):
+        # extended features
+        exponents = SINDyBase.get_ordered_poly_exponents(nfeat,
+                                                         degree,
+                                                         remove_zero_order)
+        return exponents
 
     @staticmethod
     def threshold_ls(mtx, _b, cut_off=1e-3, max_iter=10, normalize=0):
@@ -401,7 +413,7 @@ class SINDyBase(object):
                                                     "typ =='sup'!"
                 assert len(var_names) == _n, "length of var_names doesn't match with exponents!"
             else:
-                var_names = ['u%d' % i for i in np.arange(_n)]
+                var_names = ['u%f' % i for i in np.arange(_n)]
 
             for i in np.arange(_m):
                 if np.any(exponents[i, :]):
@@ -411,7 +423,7 @@ class SINDyBase(object):
                         if exponents[i, j] == 1:
                             key += var_names[j]
                         elif exponents[i, j]:
-                            key += (var_names[j] + '^{%d}' % exponents[i, j])
+                            key += (var_names[j] + '^{%f}' % exponents[i, j])
 
                     desp.append(key)
                     desp_dict[key] = exponents[i, :].tolist()
@@ -437,7 +449,7 @@ class SINDyBase(object):
             elif _n == 3:
                 dim_strs = ['x', 'y', 'z']
             else:
-                dim_strs = ['x%d' % i for i in np.arange(_n)]
+                dim_strs = ['x%f' % i for i in np.arange(_n)]
 
             for i in np.arange(_m):
                 if np.any(exponents[i, :]):
